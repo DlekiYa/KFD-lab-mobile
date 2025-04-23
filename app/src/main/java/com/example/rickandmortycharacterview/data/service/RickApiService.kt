@@ -10,8 +10,8 @@ import android.util.Log
 object RickApiService {
     private const val BASE_URL = "https://rickandmortyapi.com/api/"
 
-    suspend fun getAllCharacters(): CharacterListDTO {
-        return NetworkModule.publicClient.get("$BASE_URL/character").body()
+    suspend fun getAllCharacters(page: Int = 1): CharacterListDTO {
+        return NetworkModule.publicClient.get("$BASE_URL/character/?page=$page").body()
     }
 
     suspend fun getCharacterById(id: Int): CharacterListDTO {

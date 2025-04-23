@@ -20,7 +20,7 @@ abstract class CharacterMapper {
             return CharacterEntity(
                 name = model.name,
                 image = Uri.parse(model.image),
-                status = model.image,
+                status = model.status,
                 species = model.species
             )
         }

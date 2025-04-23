@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Scaffold
@@ -40,6 +41,7 @@ import androidx.room.Room
 import androidx.room.migration.AutoMigrationSpec
 import coil.compose.rememberImagePainter
 import com.example.rickandmortycharacterview.common.database.Database
+import com.example.rickandmortycharacterview.data.model.CharacterModel
 import com.example.rickandmortycharacterview.data.repository.RickRepository
 import com.example.rickandmortycharacterview.data.service.RickApiService
 import com.example.rickandmortycharacterview.presentation.viewmodel.CharacterViewModel
@@ -144,7 +146,8 @@ fun CharactersScreen(rep: RickRepository) {
                     }
                 }
                 is CharactersScreenState.Content -> {
-                    CharacterList(characters = state.characters)
+                    val charVM = CharacterViewModel(rep)
+                    CharacterList(charVM)
                 }
             }
         }
@@ -152,16 +155,44 @@ fun CharactersScreen(rep: RickRepository) {
 }
 
 @Composable
-fun CharacterList(characters: List<CharacterEntity>) {
+fun MyLazyColumn(
+    characterVM : CharacterViewModel
+) {
+    LaunchedEffect(Unit) {
+        characterVM.loadCharacters()
+    }
+    val lazyListState = rememberLazyListState()
+
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.layoutInfo.visibleItemsInfo }
+            .collect { visibleItems ->
+                if (visibleItems.isNotEmpty()) {
+                    val lastVisibleItem = visibleItems.last()
+                    val loadMoreThreshold = 5 // Load more when 5 items from end
+
+                    if (lastVisibleItem.index >= characterVM.characters.value.size - loadMoreThreshold) {
+                        characterVM.loadCharacters(false, true)
+                    }
+                }
+            }
+    }
+
+    val state by characterVM.characters.collectAsState()
     LazyColumn(
+        state = lazyListState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(8.dp)
     ) {
-        items(characters.size) { character ->
-            CharacterItem(character = characters[character])
+        items(state.size) { character ->
+            CharacterItem(character = state[character])
             Divider()
         }
     }
+}
+
+@Composable
+fun CharacterList(characterVM: CharacterViewModel) {
+    MyLazyColumn(characterVM = characterVM)
 }
 
 @Composable
@@ -206,6 +237,9 @@ fun CharacterItem(character: CharacterEntity) {
                         .align(Alignment.CenterVertically)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                if (character.status[0] == 'h') {
+                    Log.v("ZAMN", character.toString())
+                }
                 Text(
                     text = "${character.status} - ${character.species}",
                     style = MaterialTheme.typography.bodyMedium,

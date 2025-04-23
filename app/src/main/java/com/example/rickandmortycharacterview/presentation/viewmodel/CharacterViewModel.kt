@@ -21,24 +21,16 @@ class CharacterViewModel (
     private val _isError = MutableStateFlow(false)
     val isError: StateFlow<Boolean> = _isError.asStateFlow()
 
-    suspend fun loadCharacters(forceRefresh: Boolean = false) {
+    suspend fun loadCharacters(forceRefresh: Boolean = false, newPage: Boolean = false) {
         _isLoading.value = true
         _isError.value = false
         try {
-            val charactersList = repository.getAllCharacters(forceRefresh)
+            val charactersList = repository.getAllCharacters(forceRefresh, newPage)
             _characters.value = charactersList
         } catch (e: Exception) {
             _isError.value = true
         } finally {
             _isLoading.value = false
         }
-    }
-
-    suspend fun getFirstCharacter() : String {
-        delay(5000)
-        if (characters.value.isEmpty()) {
-            return ""
-        }
-        return characters.value[0].name
     }
 }
